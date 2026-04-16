@@ -145,8 +145,44 @@ def _build_agent(config: dict):
     return agent, router, session_db
 
 
+async def _start_telegram(agent, config):
+    """Start Telegram bot if configured. Returns the channel or None."""
+    import os
+
+    tg_config = config.get("channels", {}).get("telegram", {})
+    if not tg_config.get("enabled", False):
+        return None
+
+    bot_token = os.environ.get(
+        tg_config.get("bot_token_env", "TELEGRAM_BOT_TOKEN"),
+        tg_config.get("bot_token", ""),
+    )
+    if not bot_token:
+        logging.warning("Telegram enabled but no bot token configured")
+        return None
+
+    from kira.channels.telegram import TelegramChannel
+
+    allowed = tg_config.get("allowed_users", [])
+    channel = TelegramChannel(bot_token=bot_token, allowed_users=allowed)
+
+    # Wire up message handler
+    async def handle_telegram_message(incoming):
+        """Process a Telegram message through the agent."""
+        session_id = agent.session_db.create_session(channel="telegram")
+        response = await agent.run_turn(
+            user_message=incoming.text,
+            session_id=session_id,
+        )
+        await channel.send(incoming.channel_id, response or "(no response)")
+
+    channel.on_message(handle_telegram_message)
+    await channel.start()
+    return channel
+
+
 async def _run_with_dashboard(agent, config, session_db, router, headless=False):
-    """Run the dashboard web server and optionally the CLI REPL concurrently."""
+    """Run the dashboard, Telegram bot, and optionally CLI REPL concurrently."""
     from kira.web.server import DashboardServer
 
     dashboard_port = config.get("dashboard", {}).get("port", 7777)
@@ -159,27 +195,30 @@ async def _run_with_dashboard(agent, config, session_db, router, headless=False)
 
     await dashboard.start()
 
-    if headless:
-        # Server-only mode — run until interrupted
-        from rich.console import Console
+    # Start Telegram if configured
+    telegram = await _start_telegram(agent, config)
 
-        console = Console()
+    from rich.console import Console
+
+    console = Console()
+
+    if headless:
         console.print(
             f"[bold blue]KIRA[/bold blue] dashboard running at "
-            f"[link]http://localhost:{dashboard_port}[/link]\n"
-            "Press Ctrl+C to stop."
+            f"[link]http://localhost:{dashboard_port}[/link]"
         )
+        if telegram:
+            console.print("  [dim]Telegram bot active[/dim]")
+        console.print("Press Ctrl+C to stop.")
         try:
             while True:
                 await asyncio.sleep(3600)
         except asyncio.CancelledError:
             pass
     else:
-        # CLI + dashboard mode
-        from rich.console import Console
-
-        console = Console()
         console.print(f"  [dim]Dashboard: http://localhost:{dashboard_port}[/dim]")
+        if telegram:
+            console.print("  [dim]Telegram bot active[/dim]")
 
         from kira.cli.repl import run_repl
 
@@ -188,6 +227,8 @@ async def _run_with_dashboard(agent, config, session_db, router, headless=False)
         finally:
             pass
 
+    if telegram:
+        await telegram.stop()
     await dashboard.stop()
     await router.close()
     session_db.close()

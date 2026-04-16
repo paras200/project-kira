@@ -226,7 +226,16 @@ class DashboardServer:
                 "configured": self.config.get("channels", {})
                 .get("telegram", {})
                 .get("enabled", False),
-                "status": "not implemented yet",
+                "status": "active"
+                if self.config.get("channels", {}).get("telegram", {}).get("enabled", False)
+                else "not enabled",
+                "setup_steps": [
+                    "1. Message @BotFather on Telegram to create a bot",
+                    "2. Copy the bot token",
+                    "3. Add TELEGRAM_BOT_TOKEN to ~/.kira/secrets.yaml",
+                    "4. Set channels.telegram.enabled: true in settings.yaml",
+                    "5. Add your user ID to channels.telegram.allowed_users",
+                ],
             },
         }
 

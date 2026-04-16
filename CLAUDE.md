@@ -77,6 +77,11 @@ db.close()
 - New tools: create file in tools/builtin/, add register() function, auto-discovered
 - New providers: if OpenAI-compatible, just add to settings.yaml. Otherwise extend ProviderAdapter.
 
+## Core Principles (Always Apply)
+1. **Self-improving loops**: Every new feature must feed into the skill system. If a tool is used successfully, the evaluator should track it. New tools should have matching skills in skills/store/.
+2. **Every feature on UI + CLI**: Any capability added must be accessible from the CLI REPL AND visible/configurable in the web dashboard. No backend-only features.
+3. **Telegram parity**: Once Telegram is integrated, any feature that works via CLI should also work via Telegram. The agent is channel-agnostic.
+
 ## Key Patterns
 
 ### Adding a tool
