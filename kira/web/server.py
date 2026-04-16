@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -98,7 +97,7 @@ class DashboardServer:
         if self.agent and hasattr(self.agent, "skill_loader"):
             skills_count = len(self.agent.skill_loader.all_skills)
 
-        sessions = self.session_db.list_sessions(limit=1)
+        self.session_db.list_sessions(limit=1)
         total_sessions = len(self.session_db.list_sessions(limit=1000))
 
         return web.json_response(

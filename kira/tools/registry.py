@@ -26,7 +26,7 @@ class Tool(ABC):
     def validate(self, arguments: dict[str, Any]) -> bool:
         """Basic validation: check required fields exist."""
         required = self.schema.parameters.get("required", [])
-        props = self.schema.parameters.get("properties", {})
+        self.schema.parameters.get("properties", {})
         for field in required:
             if field not in arguments:
                 return False

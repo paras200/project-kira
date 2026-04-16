@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Optional
+from typing import Any, Callable, Optional
 
 from kira.core.models import (
-    CompletionResponse,
     Message,
     ToolCall,
     ToolContext,

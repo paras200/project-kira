@@ -14,7 +14,6 @@ import httpx
 
 from kira.core.models import (
     CompletionResponse,
-    Content,
     Message,
     StreamChunk,
     ToolCall,

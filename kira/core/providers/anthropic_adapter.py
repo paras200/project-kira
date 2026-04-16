@@ -14,7 +14,6 @@ import httpx
 
 from kira.core.models import (
     CompletionResponse,
-    Content,
     Message,
     StreamChunk,
     ToolCall,
@@ -262,7 +261,7 @@ class AnthropicAdapter(ProviderAdapter):
                         yield StreamChunk(delta_text=delta.get("text"))
                     elif delta.get("type") == "input_json_delta":
                         # Find which tool this belongs to
-                        idx = data.get("index", 0)
+                        data.get("index", 0)
                         # Accumulate JSON string
                         for tid, td in tool_accum.items():
                             td["input_json"] += delta.get("partial_json", "")

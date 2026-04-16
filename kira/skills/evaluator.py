@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-import shutil
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,7 +20,7 @@ from typing import Any, Optional
 
 from kira.core.models import ToolResult
 from kira.memory.sessions import SessionDB
-from kira.skills.loader import Skill, SkillLoader, parse_skill, save_skill
+from kira.skills.loader import Skill, SkillLoader, save_skill
 
 logger = logging.getLogger(__name__)
 

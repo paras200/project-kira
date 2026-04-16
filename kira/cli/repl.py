@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import asyncio
 import sys
 from typing import Any
 
 from rich.console import Console
-from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.text import Text
 
 from kira.core.agent import Agent
 from kira.core.models import ToolResult

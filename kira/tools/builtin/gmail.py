@@ -6,7 +6,7 @@ import base64
 import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Optional
+from typing import Any
 
 from googleapiclient.discovery import build
 
@@ -312,7 +312,7 @@ class GmailSendTool(Tool):
                          metadataHeaders=["Message-ID", "References", "Subject"])
                     .execute()
                 )
-                orig_headers = _format_headers(
+                _format_headers(
                     orig.get("payload", {}).get("headers", [])
                 )
                 for h in orig.get("payload", {}).get("headers", []):
@@ -523,17 +523,17 @@ class GmailListLabelsTool(Tool):
 
             output_lines = [f"Gmail Labels ({len(labels)} total):\n"]
             # Sort: system labels first, then user labels
-            system_labels = [l for l in labels if l.get("type") == "system"]
-            user_labels = [l for l in labels if l.get("type") != "system"]
+            system_labels = [lb for lb in labels if lb.get("type") == "system"]
+            user_labels = [lb for lb in labels if lb.get("type") != "system"]
 
             if system_labels:
                 output_lines.append("System labels:")
-                for label in sorted(system_labels, key=lambda l: l["name"]):
+                for label in sorted(system_labels, key=lambda lb: lb["name"]):
                     output_lines.append(f"  - {label['name']} (id: {label['id']})")
 
             if user_labels:
                 output_lines.append("\nUser labels:")
-                for label in sorted(user_labels, key=lambda l: l["name"]):
+                for label in sorted(user_labels, key=lambda lb: lb["name"]):
                     output_lines.append(f"  - {label['name']} (id: {label['id']})")
 
             return ToolResult(

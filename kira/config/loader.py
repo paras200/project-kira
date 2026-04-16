@@ -8,7 +8,6 @@ from typing import Any
 
 import yaml
 
-
 DEFAULT_SETTINGS: dict[str, Any] = {
     "providers": {},
     "routing": {
