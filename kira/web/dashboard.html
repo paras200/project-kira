@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kira Dashboard</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --accent: #58a6ff;
+  --green: #3fb950;
+  --red: #f85149;
+  --yellow: #d29922;
+  --orange: #db6d28;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+/* Header */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+header h1 { font-size: 24px; font-weight: 600; }
+header h1 span { color: var(--accent); }
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.status-badge.running { background: rgba(63,185,80,0.15); color: var(--green); }
+.status-badge .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Navigation */
+nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+nav button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+nav button:hover { color: var(--text); }
+nav button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Tabs content */
+.tab { display: none; }
+.tab.active { display: block; }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+/* Stat */
+.stat { text-align: center; }
+.stat .value { font-size: 28px; font-weight: 700; color: var(--accent); }
+.stat .label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; color: var(--text-dim); font-weight: 500; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+tr:hover { background: rgba(88,166,255,0.04); }
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badge.green { background: rgba(63,185,80,0.15); color: var(--green); }
+.badge.red { background: rgba(248,81,73,0.15); color: var(--red); }
+.badge.yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+.badge.blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+
+/* Forms */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+input, select, textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+textarea { min-height: 200px; resize: vertical; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; }
+input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+button.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+button.btn:hover { opacity: 0.9; }
+button.btn.secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+
+/* Activity feed */
+.activity-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(88,166,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.activity-content { flex: 1; min-width: 0; }
+.activity-content .title { font-weight: 500; }
+.activity-content .meta { font-size: 12px; color: var(--text-dim); }
+.activity-tools { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--surface);
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1><span>KIRA</span> Dashboard</h1>
+    <div id="status-badge" class="status-badge running">
+      <span class="dot"></span>
+      <span id="uptime">starting...</span>
+    </div>
+  </header>
+
+  <nav>
+    <button class="active" onclick="showTab('overview')">Overview</button>
+    <button onclick="showTab('activity')">Activity</button>
+    <button onclick="showTab('providers')">Providers</button>
+    <button onclick="showTab('skills')">Skills</button>
+    <button onclick="showTab('integrations')">Integrations</button>
+    <button onclick="showTab('identity')">Identity</button>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview" class="tab active">
+    <div class="card-grid">
+      <div class="card stat">
+        <div class="value" id="stat-providers">-</div>
+        <div class="label">Providers</div>
+      </div>
+      <div class="card stat">
+        <div class="value" id="stat-tools">-</div>
+        <div class="label">Tools</div>
+      </div>
+      <div class="card stat">
+        <div class="value" id="stat-skills">-</div>
+        <div class="label">Skills</div>
+      </div>
+      <div class="card stat">
+        <div class="value" id="stat-sessions">-</div>
+        <div class="label">Sessions</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>System Info</h3>
+      <table>
+        <tr><td style="color:var(--text-dim);width:200px">Default Model</td><td id="info-model">-</td></tr>
+        <tr><td style="color:var(--text-dim)">Gmail</td><td id="info-gmail">-</td></tr>
+        <tr><td style="color:var(--text-dim)">Active Tools</td><td id="info-tools">-</td></tr>
+        <tr><td style="color:var(--text-dim)">Uptime</td><td id="info-uptime">-</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Recent Activity</h3>
+      <div id="overview-activity">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY -->
+  <div id="tab-activity" class="tab">
+    <div class="card">
+      <h3>Session History</h3>
+      <div id="activity-feed">Loading...</div>
+    </div>
+  </div>
+
+  <!-- PROVIDERS -->
+  <div id="tab-providers" class="tab">
+    <div class="card">
+      <h3>Configured Providers</h3>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Type</th><th>Base URL</th><th>API Key</th><th>Models</th><th>Status</th></tr>
+        </thead>
+        <tbody id="providers-table">
+          <tr><td colspan="6">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Routing</h3>
+      <table>
+        <tbody id="routing-table">
+          <tr><td colspan="2">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SKILLS -->
+  <div id="tab-skills" class="tab">
+    <div class="card">
+      <h3>Active Skills</h3>
+      <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px">
+        Skills are learned capabilities. They improve through outcome-based verification.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Category</th><th>Success Rate</th><th>Uses</th><th>Version</th><th>Created By</th><th>Status</th></tr>
+        </thead>
+        <tbody id="skills-table">
+          <tr><td colspan="7">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Recent Evaluations</h3>
+      <table>
+        <thead>
+          <tr><th>Skill</th><th>Outcome</th><th>Feedback</th><th>Tokens</th><th>Cost</th><th>Time</th></tr>
+        </thead>
+        <tbody id="evals-table">
+          <tr><td colspan="6">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- INTEGRATIONS -->
+  <div id="tab-integrations" class="tab">
+    <div class="card-grid">
+      <div class="card">
+        <h3>Gmail</h3>
+        <div id="gmail-status">Loading...</div>
+      </div>
+      <div class="card">
+        <h3>Telegram</h3>
+        <div id="telegram-status">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IDENTITY -->
+  <div id="tab-identity" class="tab">
+    <div class="card">
+      <h3>Identity Files</h3>
+      <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px">
+        Edit your agent's personality, rules, and memory. Changes are saved to ~/.kira/
+      </p>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn secondary active" onclick="loadIdentityFile('SOUL.md', this)">SOUL.md</button>
+        <button class="btn secondary" onclick="loadIdentityFile('USER.md', this)">USER.md</button>
+        <button class="btn secondary" onclick="loadIdentityFile('RULES.md', this)">RULES.md</button>
+        <button class="btn secondary" onclick="loadIdentityFile('MEMORY.md', this)">MEMORY.md</button>
+        <button class="btn secondary" onclick="loadIdentityFile('HEARTBEAT.md', this)">HEARTBEAT.md</button>
+      </div>
+      <div class="form-group">
+        <textarea id="identity-editor" spellcheck="false"></textarea>
+      </div>
+      <button class="btn" onclick="saveIdentityFile()">Save</button>
+      <span id="identity-save-status" style="margin-left:12px;font-size:13px;color:var(--text-dim)"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentIdentityFile = 'SOUL.md';
+let identityData = {};
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+
+  if (name === 'activity') loadActivity();
+  if (name === 'providers') loadProviders();
+  if (name === 'skills') loadSkills();
+  if (name === 'integrations') loadIntegrations();
+  if (name === 'identity') loadIdentity();
+}
+
+async function api(path) {
+  const r = await fetch('/api/' + path);
+  return r.json();
+}
+
+// --- Overview ---
+async function loadOverview() {
+  const health = await api('health');
+  document.getElementById('stat-providers').textContent = health.providers_count;
+  document.getElementById('stat-tools').textContent = health.tools_count;
+  document.getElementById('stat-skills').textContent = health.skills_count;
+  document.getElementById('stat-sessions').textContent = health.sessions_count;
+  document.getElementById('info-model').textContent = health.default_model;
+  document.getElementById('info-uptime').textContent = health.uptime;
+  document.getElementById('uptime').textContent = health.uptime;
+  document.getElementById('info-tools').textContent = health.tools.join(', ');
+
+  const gmailEl = document.getElementById('info-gmail');
+  if (health.gmail_connected) {
+    gmailEl.innerHTML = '<span class="badge green">Connected</span>';
+  } else if (health.gmail_configured) {
+    gmailEl.innerHTML = '<span class="badge yellow">Configured (not authenticated)</span>';
+  } else {
+    gmailEl.innerHTML = '<span class="badge red">Not configured</span>';
+  }
+
+  // Recent activity preview
+  const act = await api('activity?limit=5');
+  const el = document.getElementById('overview-activity');
+  if (!act.activity.length) {
+    el.innerHTML = '<p style="color:var(--text-dim)">No activity yet. Start chatting with Kira via CLI.</p>';
+    return;
+  }
+  el.innerHTML = act.activity.map(a => `
+    <div class="activity-item">
+      <div class="activity-icon">${a.channel === 'cli' ? '>' : a.channel === 'cron' ? 'C' : 'M'}</div>
+      <div class="activity-content">
+        <div class="title">${esc(a.preview || a.title)}</div>
+        <div class="meta">${a.message_count} msgs &middot; ${a.total_tokens} tokens &middot; $${a.total_cost.toFixed(4)} &middot; ${timeAgo(a.updated_at)}</div>
+        ${a.tools_used.length ? `<div class="activity-tools">${a.tools_used.map(t => `<span class="badge blue">${t}</span>`).join('')}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// --- Activity ---
+async function loadActivity() {
+  const data = await api('activity?limit=30');
+  const el = document.getElementById('activity-feed');
+  if (!data.activity.length) {
+    el.innerHTML = '<p style="color:var(--text-dim)">No sessions yet.</p>';
+    return;
+  }
+  el.innerHTML = data.activity.map(a => `
+    <div class="activity-item">
+      <div class="activity-icon">${a.channel === 'cli' ? '>' : a.channel === 'cron' ? 'C' : 'M'}</div>
+      <div class="activity-content">
+        <div class="title">${esc(a.preview || a.title)}</div>
+        <div class="meta">
+          Session: ${a.session_id} &middot; Channel: ${a.channel} &middot;
+          ${a.message_count} msgs &middot; ${a.total_tokens} tokens &middot;
+          $${a.total_cost.toFixed(4)} &middot; ${timeAgo(a.updated_at)}
+        </div>
+        ${a.tools_used.length ? `<div class="activity-tools">${[...new Set(a.tools_used)].map(t => `<span class="badge blue">${t}</span>`).join('')}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// --- Providers ---
+async function loadProviders() {
+  const data = await api('providers');
+  const tbody = document.getElementById('providers-table');
+  if (!data.providers.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-dim)">No providers configured. Edit ~/.kira/settings.yaml</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.providers.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.type}</td>
+      <td style="font-size:12px;color:var(--text-dim)">${esc(p.base_url)}</td>
+      <td>${p.api_key_configured ? '<span class="badge green">Set</span>' : '<span class="badge red">Missing</span>'}</td>
+      <td style="font-size:12px">${p.models.slice(0,3).join(', ')}${p.models.length > 3 ? ` +${p.models.length-3}` : ''}</td>
+      <td>${p.registered ? '<span class="badge green">Active</span>' : '<span class="badge yellow">Inactive</span>'}</td>
+    </tr>
+  `).join('');
+
+  const rt = document.getElementById('routing-table');
+  rt.innerHTML = `
+    <tr><td style="color:var(--text-dim);width:200px">Default</td><td>${data.routing.default}</td></tr>
+    <tr><td style="color:var(--text-dim)">Fallback Chain</td><td>${data.routing.fallback_chain.join(' -> ') || 'none'}</td></tr>
+    ${Object.entries(data.routing.task_routing).map(([k,v]) => `<tr><td style="color:var(--text-dim)">Task: ${k}</td><td>${v}</td></tr>`).join('')}
+  `;
+}
+
+// --- Skills ---
+async function loadSkills() {
+  const data = await api('skills');
+  const tbody = document.getElementById('skills-table');
+  if (!data.skills.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-dim)">No skills yet. Skills are created as you use Kira.</td></tr>';
+  } else {
+    tbody.innerHTML = data.skills.map(s => {
+      const rateClass = s.success_rate >= 0.7 ? 'green' : s.success_rate >= 0.3 ? 'yellow' : 'red';
+      return `
+        <tr>
+          <td><strong>${s.name}</strong></td>
+          <td>${s.category}</td>
+          <td><span class="badge ${rateClass}">${(s.success_rate*100).toFixed(0)}%</span></td>
+          <td>${s.use_count}</td>
+          <td>v${s.version}</td>
+          <td>${s.created_by}</td>
+          <td><span class="badge ${s.status === 'active' ? 'green' : 'red'}">${s.status}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  const etbody = document.getElementById('evals-table');
+  if (!data.recent_evaluations.length) {
+    etbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-dim)">No evaluations yet.</td></tr>';
+  } else {
+    etbody.innerHTML = data.recent_evaluations.map(e => `
+      <tr>
+        <td>${e.skill_name || '-'}</td>
+        <td><span class="badge ${e.outcome === 'success' ? 'green' : 'red'}">${e.outcome}</span></td>
+        <td>${e.user_feedback || '-'}</td>
+        <td>${e.tokens_used || 0}</td>
+        <td>$${(e.cost_usd || 0).toFixed(4)}</td>
+        <td style="font-size:12px">${timeAgo(e.created_at)}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+// --- Integrations ---
+async function loadIntegrations() {
+  const data = await api('integrations');
+
+  const gmail = data.gmail;
+  document.getElementById('gmail-status').innerHTML = `
+    <table>
+      <tr><td style="color:var(--text-dim);width:140px">Status</td>
+        <td>${gmail.authenticated ? '<span class="badge green">Connected</span>' :
+              gmail.configured ? '<span class="badge yellow">Not authenticated</span>' :
+              '<span class="badge red">Not configured</span>'}</td></tr>
+      ${gmail.email ? `<tr><td style="color:var(--text-dim)">Email</td><td>${gmail.email}</td></tr>` : ''}
+      ${gmail.total_messages ? `<tr><td style="color:var(--text-dim)">Messages</td><td>${gmail.total_messages.toLocaleString()}</td></tr>` : ''}
+      <tr><td style="color:var(--text-dim)">Setup</td><td><code style="font-size:12px;color:var(--accent)">${gmail.setup_command}</code></td></tr>
+    </table>
+  `;
+
+  const tg = data.telegram;
+  document.getElementById('telegram-status').innerHTML = `
+    <table>
+      <tr><td style="color:var(--text-dim);width:140px">Status</td>
+        <td><span class="badge yellow">${tg.status}</span></td></tr>
+      <tr><td style="color:var(--text-dim)">Enabled</td><td>${tg.configured ? 'Yes' : 'No'}</td></tr>
+    </table>
+  `;
+}
+
+// --- Identity ---
+async function loadIdentity() {
+  identityData = await api('identity');
+  loadIdentityFile(currentIdentityFile);
+}
+
+function loadIdentityFile(filename, btn) {
+  currentIdentityFile = filename;
+  document.getElementById('identity-editor').value = identityData[filename] || '';
+  document.getElementById('identity-save-status').textContent = '';
+  if (btn) {
+    document.querySelectorAll('#tab-identity .btn.secondary').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+}
+
+async function saveIdentityFile() {
+  const content = document.getElementById('identity-editor').value;
+  const r = await fetch('/api/identity', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({filename: currentIdentityFile, content})
+  });
+  const data = await r.json();
+  if (data.status === 'saved') {
+    identityData[currentIdentityFile] = content;
+    showToast(`${currentIdentityFile} saved`);
+    document.getElementById('identity-save-status').textContent = 'Saved';
+  }
+}
+
+// --- Helpers ---
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = new Date(ts + (ts.includes('Z') ? '' : 'Z'));
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// Auto-refresh
+loadOverview();
+setInterval(loadOverview, 15000);
+</script>
+</body>
+</html>
