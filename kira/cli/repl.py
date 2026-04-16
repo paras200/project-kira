@@ -164,10 +164,7 @@ async def run_repl(agent: Agent):
             if not results:
                 console.print("[dim]No results.[/dim]")
             for r in results:
-                console.print(
-                    f"  [dim]{r.get('session_title', '?')}[/dim]: "
-                    f"{r['content'][:100]}"
-                )
+                console.print(f"  [dim]{r.get('session_title', '?')}[/dim]: {r['content'][:100]}")
             continue
 
         if user_input == "/cost":
@@ -196,7 +193,13 @@ async def run_repl(agent: Agent):
                 console.print(f"  [bold]Skills ({len(stats)} total)[/bold]")
                 for s in stats:
                     rate = f"{s['success_rate']:.0%}"
-                    badge = "[green]" if s["success_rate"] >= 0.7 else "[yellow]" if s["success_rate"] >= 0.3 else "[red]"
+                    badge = (
+                        "[green]"
+                        if s["success_rate"] >= 0.7
+                        else "[yellow]"
+                        if s["success_rate"] >= 0.3
+                        else "[red]"
+                    )
                     console.print(
                         f"  {badge}{s['name']}[/] "
                         f"— {rate} success ({s['use_count']} uses) "

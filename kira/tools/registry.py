@@ -20,8 +20,7 @@ class Tool(ABC):
     schema: ToolSchema
 
     @abstractmethod
-    async def execute(self, arguments: dict[str, Any], context: ToolContext) -> ToolResult:
-        ...
+    async def execute(self, arguments: dict[str, Any], context: ToolContext) -> ToolResult: ...
 
     def validate(self, arguments: dict[str, Any]) -> bool:
         """Basic validation: check required fields exist."""

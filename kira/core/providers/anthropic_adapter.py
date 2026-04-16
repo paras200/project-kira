@@ -25,7 +25,6 @@ from .base import ProviderAdapter
 
 
 class AnthropicAdapter(ProviderAdapter):
-
     name = "anthropic"
 
     def __init__(
@@ -119,9 +118,7 @@ class AnthropicAdapter(ProviderAdapter):
                     }
                 )
             else:
-                result.append(
-                    {"role": msg.role, "content": self._build_content(msg)}
-                )
+                result.append({"role": msg.role, "content": self._build_content(msg)})
         return result
 
     def _build_tools(self, tools: list[ToolSchema]) -> list[dict]:
@@ -166,8 +163,7 @@ class AnthropicAdapter(ProviderAdapter):
         usage = Usage(
             prompt_tokens=usage_data.get("input_tokens", 0),
             completion_tokens=usage_data.get("output_tokens", 0),
-            total_tokens=usage_data.get("input_tokens", 0)
-            + usage_data.get("output_tokens", 0),
+            total_tokens=usage_data.get("input_tokens", 0) + usage_data.get("output_tokens", 0),
         )
         return CompletionResponse(
             message=message,
@@ -276,12 +272,8 @@ class AnthropicAdapter(ProviderAdapter):
                                 args = json.loads(td["input_json"])
                             except json.JSONDecodeError:
                                 args = {"_raw": td["input_json"]}
-                            calls.append(
-                                ToolCall(id=tid, name=td["name"], arguments=args)
-                            )
-                        yield StreamChunk(
-                            delta_tool_calls=calls, finish_reason="tool_calls"
-                        )
+                            calls.append(ToolCall(id=tid, name=td["name"], arguments=args))
+                        yield StreamChunk(delta_tool_calls=calls, finish_reason="tool_calls")
                     elif stop_reason == "end_turn":
                         yield StreamChunk(finish_reason="stop")
                     usage_data = data.get("usage", {})

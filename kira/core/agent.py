@@ -69,9 +69,7 @@ class Agent:
             soul_path=identity_cfg.get("soul", "~/.kira/SOUL.md"),
             user_path=identity_cfg.get("user", "~/.kira/USER.md"),
             rules_path=identity_cfg.get("rules", "~/.kira/RULES.md"),
-            memory_path=self.config.get("memory", {}).get(
-                "memory_file", "~/.kira/MEMORY.md"
-            ),
+            memory_path=self.config.get("memory", {}).get("memory_file", "~/.kira/MEMORY.md"),
             skills_context=skills_context,
         )
 
@@ -205,7 +203,9 @@ class Agent:
             self.session_db.add_message(
                 session_id,
                 "assistant",
-                assistant_msg.content if isinstance(assistant_msg.content, str) else assistant_msg.text,
+                assistant_msg.content
+                if isinstance(assistant_msg.content, str)
+                else assistant_msg.text,
                 tool_calls=tc_data,
             )
 
@@ -299,9 +299,7 @@ class Agent:
             self.skill_evaluator.update_skill_stats(skill, eval_result)
 
             # Record evaluation
-            self.skill_evaluator.record_evaluation(
-                session_id, skill.name, eval_result, outcome
-            )
+            self.skill_evaluator.record_evaluation(session_id, skill.name, eval_result, outcome)
 
             if on_skill_event:
                 on_skill_event(
@@ -328,9 +326,7 @@ class Agent:
             eval_result = self.skill_evaluator.evaluate(outcome, skill=None)
 
             if eval_result.should_create_skill:
-                self.skill_evaluator.record_evaluation(
-                    session_id, None, eval_result, outcome
-                )
+                self.skill_evaluator.record_evaluation(session_id, None, eval_result, outcome)
 
                 if on_skill_event:
                     on_skill_event(

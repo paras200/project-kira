@@ -75,9 +75,7 @@ class DashboardServer:
     async def _serve_dashboard(self, request: web.Request) -> web.Response:
         html_path = Path(__file__).parent / "dashboard.html"
         if html_path.exists():
-            return web.Response(
-                text=html_path.read_text(), content_type="text/html"
-            )
+            return web.Response(text=html_path.read_text(), content_type="text/html")
         return web.Response(text="Dashboard not found", status=404)
 
     # --- API Endpoints ---
@@ -136,9 +134,7 @@ class DashboardServer:
             values = data.get("values")
 
             if not section or not values:
-                return web.json_response(
-                    {"error": "section and values required"}, status=400
-                )
+                return web.json_response({"error": "section and values required"}, status=400)
 
             # Load current settings
             settings_path = KIRA_HOME / "settings.yaml"
@@ -166,9 +162,7 @@ class DashboardServer:
         for name, pcfg in self.config.get("providers", {}).items():
             api_key_env = pcfg.get("api_key_env", "")
             has_key = bool(os.environ.get(api_key_env, pcfg.get("api_key", "")))
-            registered = (
-                self.agent and name in self.agent.router.providers
-            )
+            registered = self.agent and name in self.agent.router.providers
             providers.append(
                 {
                     "name": name,
@@ -203,9 +197,7 @@ class DashboardServer:
         if not session:
             return web.json_response({"error": "not found"}, status=404)
         messages = self.session_db.get_messages(session_id)
-        return web.json_response(
-            {"session": session, "messages": messages}
-        )
+        return web.json_response({"session": session, "messages": messages})
 
     async def _api_skills(self, request: web.Request) -> web.Response:
         skills = []
@@ -220,9 +212,7 @@ class DashboardServer:
         else:
             recent_evals = []
 
-        return web.json_response(
-            {"skills": skills, "recent_evaluations": recent_evals}
-        )
+        return web.json_response({"skills": skills, "recent_evaluations": recent_evals})
 
     async def _api_integrations(self, request: web.Request) -> web.Response:
         integrations = {
@@ -247,9 +237,7 @@ class DashboardServer:
 
                 service = _get_gmail_service()
                 if service:
-                    profile = (
-                        service.users().getProfile(userId="me").execute()
-                    )
+                    profile = service.users().getProfile(userId="me").execute()
                     integrations["gmail"]["email"] = profile.get("emailAddress")
                     integrations["gmail"]["total_messages"] = profile.get("messagesTotal")
             except Exception:
@@ -307,9 +295,7 @@ class DashboardServer:
 
             allowed = {"SOUL.md", "USER.md", "RULES.md", "MEMORY.md", "HEARTBEAT.md"}
             if filename not in allowed:
-                return web.json_response(
-                    {"error": f"Invalid file: {filename}"}, status=400
-                )
+                return web.json_response({"error": f"Invalid file: {filename}"}, status=400)
 
             path = KIRA_HOME / filename
             path.write_text(content)

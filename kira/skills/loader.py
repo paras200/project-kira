@@ -62,9 +62,7 @@ def parse_skill(path: Path) -> Optional[Skill]:
 
     # Parse success criteria from body
     criteria = []
-    criteria_match = re.search(
-        r"## Success Criteria\s*\n(.*?)(?:\n##|\Z)", body, re.DOTALL
-    )
+    criteria_match = re.search(r"## Success Criteria\s*\n(.*?)(?:\n##|\Z)", body, re.DOTALL)
     if criteria_match:
         for line in criteria_match.group(1).strip().splitlines():
             line = line.strip()
@@ -203,8 +201,7 @@ class SkillLoader:
 
         if selected:
             logger.info(
-                f"Selected skills: {[s.name for s in selected]} "
-                f"(from {len(self._skills)} total)"
+                f"Selected skills: {[s.name for s in selected]} (from {len(self._skills)} total)"
             )
 
         return selected

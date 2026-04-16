@@ -29,9 +29,7 @@ class ModelSpec:
         """Parse 'provider/model' string. First segment is provider, rest is model."""
         parts = spec.split("/", 1)
         if len(parts) == 1:
-            raise ValueError(
-                f"Invalid model spec '{spec}'. Expected 'provider/model'."
-            )
+            raise ValueError(f"Invalid model spec '{spec}'. Expected 'provider/model'.")
         return cls(provider=parts[0], model=parts[1])
 
 
@@ -46,9 +44,7 @@ class ModelRouter:
     ):
         self.default = ModelSpec.parse(default)
         self.fallback_chain = [ModelSpec.parse(s) for s in (fallback_chain or [])]
-        self.task_routing = {
-            k: ModelSpec.parse(v) for k, v in (task_routing or {}).items()
-        }
+        self.task_routing = {k: ModelSpec.parse(v) for k, v in (task_routing or {}).items()}
         self.providers: dict[str, ProviderAdapter] = {}
 
     def register(self, name: str, adapter: ProviderAdapter):
@@ -101,14 +97,10 @@ class ModelRouter:
                 resp.provider = spec.provider
                 return resp
             except Exception as e:
-                logger.warning(
-                    f"Provider {spec.provider}/{spec.model} failed: {e}"
-                )
+                logger.warning(f"Provider {spec.provider}/{spec.model} failed: {e}")
                 last_err = e
 
-        raise RuntimeError(
-            f"All providers failed. Last error: {last_err}"
-        )
+        raise RuntimeError(f"All providers failed. Last error: {last_err}")
 
     async def stream(
         self,
@@ -132,9 +124,7 @@ class ModelRouter:
                     yield chunk
                 return
             except Exception as e:
-                logger.warning(
-                    f"Provider {spec.provider}/{spec.model} failed: {e}"
-                )
+                logger.warning(f"Provider {spec.provider}/{spec.model} failed: {e}")
                 last_err = e
 
         raise RuntimeError(f"All providers failed. Last error: {last_err}")

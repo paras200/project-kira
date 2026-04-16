@@ -135,9 +135,7 @@ def _build_agent(config: dict):
     """Build all components and return the agent."""
     router = _build_router(config)
     tools = _build_tools(config)
-    session_db = SessionDB(
-        config.get("memory", {}).get("session_db", "~/.kira/sessions.db")
-    )
+    session_db = SessionDB(config.get("memory", {}).get("session_db", "~/.kira/sessions.db"))
     agent = Agent(
         router=router,
         tools=tools,
@@ -181,9 +179,7 @@ async def _run_with_dashboard(agent, config, session_db, router, headless=False)
         from rich.console import Console
 
         console = Console()
-        console.print(
-            f"  [dim]Dashboard: http://localhost:{dashboard_port}[/dim]"
-        )
+        console.print(f"  [dim]Dashboard: http://localhost:{dashboard_port}[/dim]")
 
         from kira.cli.repl import run_repl
 
@@ -217,9 +213,7 @@ def run():
     headless = len(sys.argv) > 1 and sys.argv[1] == "serve"
 
     try:
-        asyncio.run(
-            _run_with_dashboard(agent, config, session_db, router, headless=headless)
-        )
+        asyncio.run(_run_with_dashboard(agent, config, session_db, router, headless=headless))
     except KeyboardInterrupt:
         pass
     finally:

@@ -31,8 +31,7 @@ class ProviderAdapter(ABC):
         temperature: float = 0.7,
         max_tokens: int | None = None,
         stop: list[str] | None = None,
-    ) -> CompletionResponse:
-        ...
+    ) -> CompletionResponse: ...
 
     @abstractmethod
     async def stream(
@@ -43,8 +42,7 @@ class ProviderAdapter(ABC):
         temperature: float = 0.7,
         max_tokens: int | None = None,
         stop: list[str] | None = None,
-    ) -> AsyncIterator[StreamChunk]:
-        ...
+    ) -> AsyncIterator[StreamChunk]: ...
 
     async def close(self):
         """Clean up any resources."""

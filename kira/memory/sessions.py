@@ -147,9 +147,7 @@ class SessionDB:
         return [dict(r) for r in rows]
 
     def get_session(self, session_id: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
-            "SELECT * FROM sessions WHERE id = ?", (session_id,)
-        ).fetchone()
+        row = self._conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,)).fetchone()
         return dict(row) if row else None
 
     def list_sessions(self, limit: int = 20) -> list[dict[str, Any]]:

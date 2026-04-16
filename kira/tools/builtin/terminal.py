@@ -79,7 +79,9 @@ class TerminalTool(Tool):
                 outcome={"exit_code": proc.returncode},
             )
         except asyncio.TimeoutError:
-            return ToolResult(success=False, output=f"Command timed out after {self.schema.timeout_seconds}s")
+            return ToolResult(
+                success=False, output=f"Command timed out after {self.schema.timeout_seconds}s"
+            )
 
 
 def register(registry: ToolRegistry):

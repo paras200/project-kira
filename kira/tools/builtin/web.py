@@ -15,8 +15,7 @@ class WebFetchTool(Tool):
     schema = ToolSchema(
         name="web_fetch",
         description=(
-            "Fetch a URL and return its text content. "
-            "Strips HTML tags and returns readable text."
+            "Fetch a URL and return its text content. Strips HTML tags and returns readable text."
         ),
         parameters={
             "type": "object",
@@ -67,9 +66,7 @@ class WebFetchTool(Tool):
         max_length = arguments.get("max_length", 10_000)
 
         try:
-            async with httpx.AsyncClient(
-                follow_redirects=True, timeout=20.0
-            ) as client:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=20.0) as client:
                 resp = await client.get(
                     url,
                     headers={"User-Agent": "Kira/0.1 (Personal AI Agent)"},
@@ -91,9 +88,7 @@ class WebFetchTool(Tool):
                 outcome={"url": url, "chars": len(text)},
             )
         except httpx.HTTPStatusError as e:
-            return ToolResult(
-                success=False, output=f"HTTP {e.response.status_code}: {url}"
-            )
+            return ToolResult(success=False, output=f"HTTP {e.response.status_code}: {url}")
         except Exception as e:
             return ToolResult(success=False, output=f"Failed to fetch {url}: {e}")
 

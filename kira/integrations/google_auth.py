@@ -101,9 +101,7 @@ def run_auth_flow(
             "7. Save it as ~/.kira/google_credentials.json"
         )
 
-    flow = InstalledAppFlow.from_client_secrets_file(
-        str(credentials_path), scopes
-    )
+    flow = InstalledAppFlow.from_client_secrets_file(str(credentials_path), scopes)
 
     # Run local server for OAuth callback
     creds = flow.run_local_server(port=0)

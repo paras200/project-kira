@@ -51,9 +51,7 @@ class FileReadTool(Tool):
             limit = arguments.get("limit", 2000)
             selected = lines[offset : offset + limit]
 
-            output = "".join(
-                f"{i + offset + 1:4d} | {line}" for i, line in enumerate(selected)
-            )
+            output = "".join(f"{i + offset + 1:4d} | {line}" for i, line in enumerate(selected))
             total = len(lines)
             if offset + limit < total:
                 output += f"\n... ({total - offset - limit} more lines)"
@@ -134,9 +132,7 @@ class FileSearchTool(Tool):
 
     async def execute(self, arguments: dict[str, Any], context: ToolContext) -> ToolResult:
         pattern = arguments["pattern"]
-        directory = Path(
-            arguments.get("directory", context.workspace)
-        ).expanduser().resolve()
+        directory = Path(arguments.get("directory", context.workspace)).expanduser().resolve()
 
         if not directory.exists():
             return ToolResult(success=False, output=f"Directory not found: {directory}")
@@ -183,9 +179,7 @@ class TextSearchTool(Tool):
         import re
 
         query = arguments["query"]
-        directory = Path(
-            arguments.get("directory", context.workspace)
-        ).expanduser().resolve()
+        directory = Path(arguments.get("directory", context.workspace)).expanduser().resolve()
         file_pattern = arguments.get("file_pattern", "*")
 
         try:

@@ -25,7 +25,6 @@ from .base import ProviderAdapter
 
 
 class OpenAICompatibleAdapter(ProviderAdapter):
-
     name = "openai_compatible"
 
     def __init__(
@@ -132,9 +131,7 @@ class OpenAICompatibleAdapter(ProviderAdapter):
                 args = json.loads(args_str)
             except json.JSONDecodeError:
                 args = {"_raw": args_str}
-            result.append(
-                ToolCall(id=tc.get("id", ""), name=fn.get("name", ""), arguments=args)
-            )
+            result.append(ToolCall(id=tc.get("id", ""), name=fn.get("name", ""), arguments=args))
         return result
 
     def _parse_response(self, data: dict, latency_ms: int) -> CompletionResponse:
@@ -191,12 +188,8 @@ class OpenAICompatibleAdapter(ProviderAdapter):
         max_tokens: int | None = None,
         stop: list[str] | None = None,
     ) -> AsyncIterator[StreamChunk]:
-        body = self._build_body(
-            messages, tools, model, temperature, max_tokens, stop, stream=True
-        )
-        async with self._client.stream(
-            "POST", "/chat/completions", json=body
-        ) as resp:
+        body = self._build_body(messages, tools, model, temperature, max_tokens, stop, stream=True)
+        async with self._client.stream("POST", "/chat/completions", json=body) as resp:
             resp.raise_for_status()
             # Accumulate partial tool calls across chunks
             tool_call_accum: dict[int, dict] = {}
@@ -222,9 +215,7 @@ class OpenAICompatibleAdapter(ProviderAdapter):
                                     arguments=args,
                                 )
                             )
-                        yield StreamChunk(
-                            delta_tool_calls=calls, finish_reason="tool_calls"
-                        )
+                        yield StreamChunk(delta_tool_calls=calls, finish_reason="tool_calls")
                     break
 
                 try:

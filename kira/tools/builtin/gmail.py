@@ -30,9 +30,7 @@ def _decode_body(payload: dict) -> str:
     body = ""
 
     if payload.get("body", {}).get("data"):
-        body = base64.urlsafe_b64decode(payload["body"]["data"]).decode(
-            "utf-8", errors="replace"
-        )
+        body = base64.urlsafe_b64decode(payload["body"]["data"]).decode("utf-8", errors="replace")
     elif payload.get("parts"):
         for part in payload["parts"]:
             mime = part.get("mimeType", "")
@@ -127,8 +125,12 @@ class GmailSearchTool(Tool):
                 msg = (
                     service.users()
                     .messages()
-                    .get(userId="me", id=msg_ref["id"], format="metadata",
-                         metadataHeaders=["From", "Subject", "Date"])
+                    .get(
+                        userId="me",
+                        id=msg_ref["id"],
+                        format="metadata",
+                        metadataHeaders=["From", "Subject", "Date"],
+                    )
                     .execute()
                 )
                 headers = _format_headers(msg.get("payload", {}).get("headers", []))
@@ -191,12 +193,7 @@ class GmailReadTool(Tool):
         mark_read = arguments.get("mark_read", True)
 
         try:
-            msg = (
-                service.users()
-                .messages()
-                .get(userId="me", id=msg_id, format="full")
-                .execute()
-            )
+            msg = service.users().messages().get(userId="me", id=msg_id, format="full").execute()
 
             headers = _format_headers(msg.get("payload", {}).get("headers", []))
             body = _decode_body(msg.get("payload", {}))
@@ -209,9 +206,7 @@ class GmailReadTool(Tool):
             attachments = []
             for part in msg.get("payload", {}).get("parts", []):
                 if part.get("filename"):
-                    attachments.append(
-                        f"{part['filename']} ({part.get('mimeType', 'unknown')})"
-                    )
+                    attachments.append(f"{part['filename']} ({part.get('mimeType', 'unknown')})")
 
             output_parts = [
                 f"From: {headers.get('From', '?')}",
@@ -219,10 +214,12 @@ class GmailReadTool(Tool):
             ]
             if headers.get("Cc"):
                 output_parts.append(f"Cc: {headers['Cc']}")
-            output_parts.extend([
-                f"Subject: {headers.get('Subject', '(no subject)')}",
-                f"Date: {headers.get('Date', '?')}",
-            ])
+            output_parts.extend(
+                [
+                    f"Subject: {headers.get('Subject', '(no subject)')}",
+                    f"Date: {headers.get('Date', '?')}",
+                ]
+            )
             if attachments:
                 output_parts.append(f"Attachments: {', '.join(attachments)}")
             output_parts.extend(["", "--- Body ---", body])
@@ -308,13 +305,15 @@ class GmailSendTool(Tool):
                 orig = (
                     service.users()
                     .messages()
-                    .get(userId="me", id=reply_to_id, format="metadata",
-                         metadataHeaders=["Message-ID", "References", "Subject"])
+                    .get(
+                        userId="me",
+                        id=reply_to_id,
+                        format="metadata",
+                        metadataHeaders=["Message-ID", "References", "Subject"],
+                    )
                     .execute()
                 )
-                _format_headers(
-                    orig.get("payload", {}).get("headers", [])
-                )
+                _format_headers(orig.get("payload", {}).get("headers", []))
                 for h in orig.get("payload", {}).get("headers", []):
                     if h["name"] == "Message-ID":
                         message["In-Reply-To"] = h["value"]
@@ -333,12 +332,7 @@ class GmailSendTool(Tool):
                 )
                 send_body["threadId"] = orig_msg.get("threadId")
 
-            sent = (
-                service.users()
-                .messages()
-                .send(userId="me", body=send_body)
-                .execute()
-            )
+            sent = service.users().messages().send(userId="me", body=send_body).execute()
 
             return ToolResult(
                 success=True,
@@ -479,9 +473,7 @@ class GmailLabelTool(Tool):
             if remove_labels:
                 body["removeLabelIds"] = remove_labels
 
-            service.users().messages().modify(
-                userId="me", id=msg_id, body=body
-            ).execute()
+            service.users().messages().modify(userId="me", id=msg_id, body=body).execute()
 
             actions = []
             if add_labels:

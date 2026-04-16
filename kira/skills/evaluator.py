@@ -105,13 +105,9 @@ class SkillEvaluator:
         # Thresholds from config
         self.disable_threshold = self._config.get("disable_threshold", 0.3)
         self.disable_min_uses = self._config.get("disable_min_uses", 5)
-        self.min_successes_for_update = self._config.get(
-            "min_successes_for_update", 2
-        )
+        self.min_successes_for_update = self._config.get("min_successes_for_update", 2)
         self.auto_create = self._config.get("auto_create", True)
-        self.require_approval_for_new = self._config.get(
-            "require_approval_for_new", True
-        )
+        self.require_approval_for_new = self._config.get("require_approval_for_new", True)
 
         # Track consecutive successes for skill updates
         self._consecutive_successes: dict[str, int] = {}
@@ -175,7 +171,9 @@ class SkillEvaluator:
             result.should_update_skill = True
             result.reason = "Task succeeded with existing skill"
         elif not all_passed and skill:
-            result.reason = f"Task failed criteria: {[k for k, v in criteria_results.items() if not v]}"
+            result.reason = (
+                f"Task failed criteria: {[k for k, v in criteria_results.items() if not v]}"
+            )
 
         return result
 
@@ -191,21 +189,15 @@ class SkillEvaluator:
 
         # Email sent check
         if "email_sent" in criterion_lower or "email sent" in criterion_lower:
-            return any(
-                o.get("email_sent") for o in outcome.tool_outcomes
-            )
+            return any(o.get("email_sent") for o in outcome.tool_outcomes)
 
         # Draft created check
         if "draft_created" in criterion_lower or "draft created" in criterion_lower:
-            return any(
-                o.get("draft_created") for o in outcome.tool_outcomes
-            )
+            return any(o.get("draft_created") for o in outcome.tool_outcomes)
 
         # CSV/row check
         if "row_added" in criterion_lower or "row added" in criterion_lower:
-            return any(
-                o.get("rows_added", 0) > 0 for o in outcome.tool_outcomes
-            )
+            return any(o.get("rows_added", 0) > 0 for o in outcome.tool_outcomes)
 
         # User approval check
         if "user_approved" in criterion_lower or "user approved" in criterion_lower:
@@ -213,21 +205,15 @@ class SkillEvaluator:
 
         # Labels modified
         if "labels_modified" in criterion_lower or "labels modified" in criterion_lower:
-            return any(
-                o.get("labels_modified") for o in outcome.tool_outcomes
-            )
+            return any(o.get("labels_modified") for o in outcome.tool_outcomes)
 
         # Message read
         if "message_read" in criterion_lower or "message read" in criterion_lower:
-            return any(
-                o.get("message_read") for o in outcome.tool_outcomes
-            )
+            return any(o.get("message_read") for o in outcome.tool_outcomes)
 
         # Generic tool success check
         if "tool" in criterion_lower and "success" in criterion_lower:
-            return all(
-                o.get("success", False) for o in outcome.tool_outcomes
-            )
+            return all(o.get("success", False) for o in outcome.tool_outcomes)
 
         # Default: can't verify, assume passed (don't block on unknown criteria)
         logger.debug(f"Unknown criterion format, assuming passed: {criterion}")
@@ -245,9 +231,7 @@ class SkillEvaluator:
         if not outcome.tool_outcomes:
             return False
 
-        all_tools_ok = all(
-            o.get("success", False) for o in outcome.tool_outcomes
-        )
+        all_tools_ok = all(o.get("success", False) for o in outcome.tool_outcomes)
 
         user_ok = outcome.user_feedback not in ("rejected", "corrected")
 
@@ -261,9 +245,7 @@ class SkillEvaluator:
             skill.success_count += 1
             # Track consecutive successes
             key = skill.name
-            self._consecutive_successes[key] = (
-                self._consecutive_successes.get(key, 0) + 1
-            )
+            self._consecutive_successes[key] = self._consecutive_successes.get(key, 0) + 1
         else:
             self._consecutive_successes.pop(skill.name, None)
 
@@ -275,10 +257,7 @@ class SkillEvaluator:
         save_skill(skill)
 
         # Check if skill should be disabled
-        if (
-            skill.use_count >= self.disable_min_uses
-            and skill.success_rate < self.disable_threshold
-        ):
+        if skill.use_count >= self.disable_min_uses and skill.success_rate < self.disable_threshold:
             logger.warning(
                 f"Skill '{skill.name}' below threshold "
                 f"({skill.success_rate:.0%} < {self.disable_threshold:.0%}), "
