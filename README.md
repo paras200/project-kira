@@ -2,7 +2,7 @@
 
 A personal AI agent framework that runs on your own infrastructure, connects to any LLM provider, and genuinely self-improves through outcome-verified learning loops.
 
-Built by combining the best architectural ideas from [Hermes Agent](https://github.com/nousresearch/hermes-agent) and [OpenClaw](https://github.com/openclaw/openclaw) — without their bloat, instability, or broken self-evaluation.
+A lightweight, hackable alternative to heavyweight agent frameworks — no bloat, no instability, no broken self-evaluation.
 
 ## What It Does
 
@@ -17,7 +17,7 @@ Built by combining the best architectural ideas from [Hermes Agent](https://gith
 ### 1. Install
 
 ```bash
-git clone <your-repo-url> kira
+git clone https://github.com/paras200/project-kira.git kira
 cd kira
 python3 -m venv .venv
 source .venv/bin/activate
@@ -182,7 +182,7 @@ routing:
 
 ## Self-Improving Skills
 
-Kira learns from tasks it completes successfully. Unlike Hermes (which always thinks it did well), Kira uses **outcome-based verification** — it checks if the task actually succeeded before saving a skill.
+Kira learns from tasks it completes successfully. It uses **outcome-based verification** — it checks if the task actually succeeded before saving a skill, rather than relying on the LLM's self-assessment.
 
 Skills are plain markdown files in `~/.kira/skills/store/`:
 
@@ -219,7 +219,7 @@ Define your agent's personality and behavior:
 
 ```markdown
 # SOUL.md
-You are Kira, a personal AI assistant for Anjali.
+You are Kira, a personal AI assistant.
 
 ## Personality
 - Direct and concise. No fluff.

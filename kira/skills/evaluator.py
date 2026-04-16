@@ -1,6 +1,6 @@
 """Skill evaluator — outcome-based verification for self-improvement.
 
-This is the KEY differentiator from Hermes. The agent NEVER judges itself.
+The agent NEVER judges itself.
 Instead, we check verifiable outcomes:
 - Did the file get created?
 - Did the email send?
@@ -120,8 +120,7 @@ class SkillEvaluator:
         """
         Evaluate a task outcome against verifiable criteria.
 
-        This is where we diverge from Hermes — we check REAL outcomes,
-        not the agent's self-assessment.
+        We check REAL outcomes, not the agent's self-assessment.
         """
         criteria_results: dict[str, bool] = {}
         all_passed = True

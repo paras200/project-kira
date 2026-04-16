@@ -12,7 +12,7 @@ When the user asks you to build, fix, or enhance KIRA:
 
 ## Project Overview
 KIRA (Knowledge-driven Intelligent Reasoning Agent) is a personal AI agent framework.
-It combines the best ideas from Hermes Agent and OpenClaw into a lightweight, self-improving agent.
+A lightweight, self-improving personal AI agent framework.
 Python 3.9+. No heavy frameworks. Direct HTTP via httpx. All state is local (SQLite + markdown).
 
 ## Directory Structure

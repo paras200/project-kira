@@ -15,7 +15,7 @@ Build a personal AI agent framework that:
 - Genuinely self-improves through outcome-verified learning loops
 - Handles personal tasks: email, job applications, research, scheduling, and more
 - Stays small, hackable, and fully under your control
-- Takes the best architectural ideas from Hermes and OpenClaw without their bloat
+- Stays lightweight — no bloat from heavyweight agent frameworks
 
 **Non-goals**: We are NOT building a product for others. No marketplace, no plugin store, no mobile apps. This is YOUR agent, YOUR rules.
 
@@ -261,7 +261,7 @@ providers:
     base_url: https://openrouter.ai/api/v1
     api_key_env: OPENROUTER_API_KEY        # Read from secrets.yaml or env var
     default_headers:
-      HTTP-Referer: "https://github.com/yourname/kira"
+      HTTP-Referer: "https://github.com/paras200/project-kira"
     models:
       - anthropic/claude-sonnet-4-20250514
       - google/gemini-2.5-flash
@@ -638,7 +638,7 @@ status: active                         # active | disabled | under_review
 
 ### 7.4 Skill Injection Strategy
 
-NOT all skills are loaded into every conversation. That's what breaks Hermes.
+NOT all skills are loaded into every conversation. That causes context pollution.
 
 ```python
 class SkillLoader:
@@ -664,9 +664,9 @@ class SkillLoader:
 
 ## 8. Self-Improving Loop (Outcome-Based)
 
-### 8.1 Why Hermes's Approach Fails
+### 8.1 Why Self-Evaluation Fails
 
-Hermes lets the agent self-evaluate: "Did I do a good job?" The agent always says yes. This creates a positive feedback loop where bad skills accumulate and good skills get overwritten.
+Letting the agent self-evaluate ("Did I do a good job?") always results in positive ratings. This creates a feedback loop where bad skills accumulate and good skills get overwritten.
 
 ### 8.2 Our Approach: Outcome Verification
 
@@ -747,7 +747,7 @@ evaluation:
 - Extracts patterns, recurring topics, and useful context
 - Distills into knowledge memory entries
 - Runs on a cheap model (e.g., Gemini Flash) to save costs
-- Inspired by OpenClaw's "dreaming" concept but with explicit verification
+- Background consolidation with explicit verification
 
 ### 9.2 Session DB Schema
 
@@ -1334,7 +1334,7 @@ GOOGLE_API_KEY: AI...
 
 ### 14.1 Principles
 
-- **Default-deny for destructive actions.** Unlike Hermes (default-allow) or OpenClaw (9 CVEs).
+- **Default-deny for destructive actions.** No ALLOW-ALL defaults.
 - **No remote code execution without sandboxing.**
 - **Workspace isolation.** Agent cannot read files outside `security.workspace_root`.
 - **Approval flow for sensitive tools.** Configurable per-tool.
@@ -1516,21 +1516,20 @@ Deliverables:
 
 ---
 
-## 18. What We Take From Hermes vs. OpenClaw
+## 18. Key Architectural Decisions
 
-| Idea | Source | Our Implementation |
-|------|--------|--------------------|
-| Skill documents as markdown | Hermes | Same format, but with outcome-based scoring |
-| Tool registry (self-registering) | Hermes | Same pattern, simplified |
-| SessionDB (SQLite + FTS5) | Hermes | Same approach, cleaner schema |
-| Context compression (Head+Summary+Tail) | Hermes | Same strategy |
-| SOUL.md (agent identity) | OpenClaw | Same concept |
-| HEARTBEAT.md (scheduled tasks) | OpenClaw | Same concept, simpler parser |
-| Channel plugin pattern | OpenClaw | Same interface pattern, fewer platforms |
-| Memory consolidation ("dreaming") | OpenClaw | Same idea, but with explicit verification |
-| Self-improving loop | Hermes (broken) | Rebuilt from scratch with outcome verification |
-| Credential rotation | Hermes | Simplified — config-based, no pool manager |
-| Provider transport streams | OpenClaw | Simplified — httpx direct, no SDK wrappers |
+| Pattern | Implementation |
+|---------|----------------|
+| Skill documents as markdown | YAML frontmatter + markdown body, outcome-based scoring |
+| Tool registry (self-registering) | Auto-discovered Python modules with register() function |
+| SessionDB (SQLite + FTS5) | Zero-dependency, full-text searchable conversation history |
+| Context compression (Head+Summary+Tail) | Cheap model summarizes middle, preserves recent context |
+| SOUL.md (agent identity) | Plain markdown personality definition |
+| HEARTBEAT.md (scheduled tasks) | Natural language cron definitions |
+| Channel plugin pattern | Each platform is a self-contained adapter |
+| Memory consolidation | Background process distills sessions into long-term knowledge |
+| Self-improving loop | Outcome-verified, never self-judged |
+| Provider adapters | Direct httpx calls, no SDK wrappers |
 
 ---
 
@@ -1540,11 +1539,9 @@ Deliverables:
 - Web-based chat UI (use CLI or Telegram)
 - Plugin marketplace or skill hub
 - Multi-user support (this is YOUR agent)
-- OAuth login flows
 - Docker orchestration (single process is enough)
 - Telemetry or analytics reporting
 - Backward compatibility layers
-- Migration tools from Hermes/OpenClaw
 - Theme/skin engine
 - Voice wake-word detection
 - RL training infrastructure
