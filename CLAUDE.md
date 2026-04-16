@@ -1,89 +1,99 @@
 # CLAUDE.md — Autonomous Workflow for KIRA
 
+## Autonomy Rules
+When the user asks you to build, fix, or enhance KIRA:
+- **Do not ask clarifying questions.** Make reasonable decisions and proceed.
+- **Do not ask for permission** to create files, install dependencies, or run tests.
+- **Do not present options.** Pick the best one and build it.
+- **Do not summarize what you will do.** Just do it.
+- **After building, verify it works** by running imports and basic tests.
+- **Commit when asked**, not before. Never push without being told to.
+- If something is ambiguous, choose the simpler path. You can always iterate.
+
 ## Project Overview
 KIRA (Knowledge-driven Intelligent Reasoning Agent) is a personal AI agent framework.
 It combines the best ideas from Hermes Agent and OpenClaw into a lightweight, self-improving agent.
+Python 3.9+. No heavy frameworks. Direct HTTP via httpx. All state is local (SQLite + markdown).
 
 ## Directory Structure
 ```
 kira/
-  core/           — Agent loop, providers, router, models
-  identity/       — SOUL.md, USER.md, RULES.md loader
-  skills/         — Skill system (loader, evaluator, store)
-  memory/         — Session DB (SQLite+FTS5), long-term memory
-  tools/          — Tool registry + built-in tools
-  channels/       — Messaging platform adapters
-  scheduler/      — Cron/heartbeat system
-  config/         — Settings + secrets loader
-  cli/            — REPL and main entry point
-  web/            — Dashboard (server.py + dashboard.html)
-  integrations/   — Google OAuth, etc.
+  core/             — Agent loop, providers, router, internal models
+    providers/      — LLM adapters (openai_compat.py, anthropic_adapter.py)
+    agent.py        — Main agent loop (prompt -> LLM -> tools -> repeat)
+    router.py       — Model routing with fallback chain
+    models.py       — Message, ToolCall, ToolSchema, TurnBudget, etc.
+  identity/         — SOUL.md, USER.md, RULES.md loader
+  skills/           — Skill loader, evaluator, store/
+    evaluator.py    — Outcome-based skill scoring (never self-judgment)
+    loader.py       — Skill discovery, selection, injection
+  memory/           — Session DB (SQLite + FTS5)
+  tools/            — Tool registry + built-in tools
+    builtin/        — terminal, files, web, gmail
+  channels/         — Messaging platform adapters (placeholder)
+  scheduler/        — Cron/heartbeat (placeholder)
+  config/           — Settings + secrets loader
+  cli/              — REPL (repl.py) and entry point (main.py)
+  web/              — Dashboard server (server.py) + UI (dashboard.html)
+  integrations/     — Google OAuth2
 ```
 
-## How to Run
+## Running
 ```bash
-cd /Users/anjalisingh/Documents/OpenClawOrHermes
 source .venv/bin/activate
-kira                    # CLI REPL + dashboard at http://localhost:7777
-kira serve              # Dashboard only (headless, for servers)
-kira setup google       # Google OAuth setup
+kira                    # CLI + dashboard at http://localhost:7777
+kira serve              # Dashboard only (headless)
+kira setup google       # Google OAuth
 ```
 
-## How to Test
+## Testing
 ```bash
 source .venv/bin/activate
-python -m pytest tests/ -v
-# Quick import check:
 python -c "from kira.core.agent import Agent; print('OK')"
+# Or run full import + tool + session + skill test:
+python -c "
+from kira.tools.registry import ToolRegistry
+from kira.memory.sessions import SessionDB
+from kira.skills.loader import SkillLoader
+from kira.config.loader import build_kira_home
+import tempfile, os
+build_kira_home()
+r = ToolRegistry(); r.load_builtin()
+print(f'{len(r.list_schemas())} tools OK')
+db = SessionDB(os.path.join(tempfile.mkdtemp(), 't.db'))
+sid = db.create_session(); db.add_message(sid, 'user', 'test')
+print(f'SessionDB OK')
+db.close()
+"
 ```
 
 ## Development Rules
-- Keep total codebase under 10,000 lines
-- No heavy frameworks (no LangChain, no LiteLLM, no LlamaIndex)
-- Direct HTTP calls via httpx for all provider APIs
-- All state is local: SQLite + markdown files
-- Every tool must return a ToolResult with success, output, and optional outcome dict
-- Provider adapters normalize to internal Message format (kira/core/models.py)
-- Self-improving loop uses OUTCOME-BASED verification, never self-judgment
-- Skills are markdown files with YAML frontmatter in skills/store/
+- Keep codebase under 10,000 lines
+- No LangChain, LiteLLM, LlamaIndex — direct httpx calls
+- Every tool returns ToolResult(success, output, outcome)
+- Provider adapters normalize to internal Message format
+- Skills use OUTCOME-BASED verification, never LLM self-judgment
+- Skills are markdown with YAML frontmatter in skills/store/
+- New tools: create file in tools/builtin/, add register() function, auto-discovered
+- New providers: if OpenAI-compatible, just add to settings.yaml. Otherwise extend ProviderAdapter.
 
-## Key Files
-- `kira/core/models.py` — All data types (Message, ToolCall, ToolSchema, etc.)
-- `kira/core/agent.py` — The agent loop
-- `kira/core/router.py` — Model routing + fallback
-- `kira/core/providers/openai_compat.py` — Covers OpenRouter, OpenAI, Groq, Ollama, etc.
-- `kira/core/providers/anthropic_adapter.py` — Anthropic Messages API
-- `kira/tools/registry.py` — Tool registration and dispatch
-- `kira/tools/builtin/` — Built-in tools (terminal, files, web, gmail)
-- `kira/tools/builtin/gmail.py` — Gmail tools (search, read, send, draft, label)
-- `kira/integrations/google_auth.py` — Google OAuth2 flow for Gmail API
-- `kira/memory/sessions.py` — SQLite session database with FTS5
-- `kira/identity/loader.py` — System prompt assembly from markdown files
-- `kira/config/loader.py` — Config loading + defaults
-- `kira/cli/main.py` — Entry point, wires everything together
-- `kira/cli/repl.py` — Interactive CLI
+## Key Patterns
 
-## Adding a New Provider
-1. If OpenAI-compatible: just add to settings.yaml providers section with type: openai_compatible
-2. If custom API: create new adapter in kira/core/providers/ extending ProviderAdapter
-3. Register in kira/cli/main.py _build_router()
+### Adding a tool
+```python
+# kira/tools/builtin/my_tool.py
+class MyTool(Tool):
+    schema = ToolSchema(name="my_tool", description="...", parameters={...})
+    async def execute(self, arguments, context) -> ToolResult:
+        return ToolResult(success=True, output="result", outcome={"key": "val"})
+def register(registry): registry.register(MyTool())
+```
 
-## Adding a New Tool
-1. Create a file in kira/tools/builtin/ (or kira/tools/custom/ for personal tools)
-2. Define a class extending Tool with a schema and execute method
-3. Add a register(registry) function at module level
-4. It auto-discovers on startup
-
-## Google/Gmail Setup
-```bash
-# 1. Get OAuth credentials from Google Cloud Console
-#    (enable Gmail API, create Desktop OAuth client, download JSON)
-# 2. Save as ~/.kira/google_credentials.json
-# 3. Authenticate:
-kira setup google
-# Or from inside the REPL:
-/setup google
-/gmail status
+### Adding a provider
+If OpenAI-compatible: just add to ~/.kira/settings.yaml. Otherwise:
+```python
+# kira/core/providers/my_provider.py — extend ProviderAdapter
+# Then register in kira/cli/main.py _build_router()
 ```
 
 ## Phase Roadmap
@@ -92,11 +102,11 @@ kira setup google
 - Phase 2 (DONE): Skills system with outcome-based self-improvement
 - Phase 2.5 (DONE): Web dashboard (config, monitoring, activity, skills, identity editor)
 - Phase 3 (NEXT): Telegram channel, scheduler/heartbeat
-- Phase 4: Memory consolidation, advanced providers
+- Phase 4: Memory consolidation, Google Calendar, advanced providers
 
 ## Coding Style
-- Use `from __future__ import annotations` in every file
-- Type hints everywhere
-- Async by default (asyncio)
-- Logging via stdlib logging module
+- `from __future__ import annotations` in every file
+- Type hints everywhere, async by default
+- Logging via stdlib logging
 - No emojis in code or output
+- Minimal dependencies — if stdlib can do it, use stdlib

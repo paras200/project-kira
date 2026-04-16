@@ -1,0 +1,228 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+          pip install ruff pyright
+
+      - name: Ruff lint
+        run: ruff check kira/ --output-format=github
+
+      - name: Ruff format check
+        run: ruff format --check kira/
+
+      - name: Type check
+        run: pyright kira/ --level basic
+        continue-on-error: true  # advisory for now, not blocking
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Import check
+        run: |
+          python -c "
+          from kira.core.models import Message, ToolCall, ToolSchema, TurnBudget
+          from kira.core.router import ModelRouter, ModelSpec
+          from kira.core.providers.base import ProviderAdapter
+          from kira.core.providers.openai_compat import OpenAICompatibleAdapter
+          from kira.core.providers.anthropic_adapter import AnthropicAdapter
+          from kira.tools.registry import ToolRegistry, Tool
+          from kira.memory.sessions import SessionDB
+          from kira.identity.loader import build_system_prompt
+          from kira.config.loader import load_config, build_kira_home
+          from kira.skills.loader import SkillLoader, parse_skill
+          from kira.skills.evaluator import SkillEvaluator, OutcomeCollector
+          from kira.web.server import DashboardServer
+          print('All imports OK')
+          "
+
+      - name: Tool registry test
+        run: |
+          python -c "
+          from kira.tools.registry import ToolRegistry
+          r = ToolRegistry()
+          r.load_builtin()
+          tools = r.list_schemas()
+          assert len(tools) == 12, f'Expected 12 tools, got {len(tools)}'
+          print(f'Loaded {len(tools)} tools: {[t.name for t in tools]}')
+          "
+
+      - name: Session DB test
+        run: |
+          python -c "
+          from kira.memory.sessions import SessionDB
+          import tempfile, os
+          db = SessionDB(os.path.join(tempfile.mkdtemp(), 'test.db'))
+          sid = db.create_session(channel='test')
+          db.add_message(sid, 'user', 'hello world')
+          db.add_message(sid, 'assistant', 'hi there')
+          msgs = db.get_messages(sid)
+          assert len(msgs) == 2
+          results = db.search('hello')
+          assert len(results) == 1
+          db.close()
+          print('SessionDB OK')
+          "
+
+      - name: Provider adapter test
+        run: |
+          python -c "
+          from kira.core.providers.openai_compat import OpenAICompatibleAdapter
+          from kira.core.providers.anthropic_adapter import AnthropicAdapter
+          from kira.core.models import Message, ToolCall
+
+          oai = OpenAICompatibleAdapter(base_url='https://openrouter.ai/api/v1', api_key='test')
+          ant = AnthropicAdapter(api_key='test')
+
+          msgs = [
+              Message(role='system', content='You are helpful'),
+              Message(role='user', content='Hello'),
+              Message(role='assistant', content='Hi', tool_calls=[
+                  ToolCall(id='tc1', name='terminal', arguments={'command': 'ls'})
+              ]),
+              Message(role='tool', content='file1.py', tool_call_id='tc1', name='terminal'),
+          ]
+
+          oai_msgs = oai._build_messages(msgs)
+          assert len(oai_msgs) == 4
+          assert oai_msgs[2]['tool_calls'][0]['function']['name'] == 'terminal'
+
+          system, ant_msgs = ant._extract_system(msgs)
+          assert system == 'You are helpful'
+          ant_built = ant._build_messages(ant_msgs)
+          assert ant_built[2]['role'] == 'user'
+          assert ant_built[2]['content'][0]['type'] == 'tool_result'
+          print('Provider adapters OK')
+          "
+
+      - name: Skills system test
+        run: |
+          python -c "
+          from kira.skills.loader import SkillLoader
+          from kira.skills.evaluator import SkillEvaluator, OutcomeCollector, TaskOutcome
+          from kira.memory.sessions import SessionDB
+          from kira.core.models import ToolResult
+          import tempfile, os
+
+          loader = SkillLoader(store_dir='kira/skills/store', archive_dir=tempfile.mkdtemp())
+          skills = loader.load_all()
+          assert len(skills) >= 1, f'Expected at least 1 skill, got {len(skills)}'
+
+          selected = loader.select_skills('check my unread emails')
+          assert len(selected) > 0, 'Should match email-triage skill'
+
+          selected_none = loader.select_skills('what is the weather')
+          assert len(selected_none) == 0, 'Should not match any skill'
+
+          collector = OutcomeCollector()
+          collector.record('gmail_search', ToolResult(success=True, output='Found 5', outcome={'emails_found': 5}))
+          assert collector.all_succeeded()
+
+          db = SessionDB(os.path.join(tempfile.mkdtemp(), 'test.db'))
+          evaluator = SkillEvaluator(skill_loader=loader, session_db=db)
+          outcome = TaskOutcome(session_id='t', tool_outcomes=collector.outcomes, iterations=1)
+          result = evaluator.evaluate(outcome, loader.get('email-triage'))
+          assert result.success
+          db.close()
+          print('Skills system OK')
+          "
+
+      - name: Model router test
+        run: |
+          python -c "
+          from kira.core.router import ModelRouter, ModelSpec
+
+          spec = ModelSpec.parse('openrouter/anthropic/claude-sonnet-4-20250514')
+          assert spec.provider == 'openrouter'
+          assert spec.model == 'anthropic/claude-sonnet-4-20250514'
+
+          router = ModelRouter(
+              default='openrouter/anthropic/claude-sonnet-4-20250514',
+              fallback_chain=['ollama/llama3.1:8b'],
+              task_routing={'summarize': 'groq/gemma2-9b-it'},
+          )
+          specs = router._resolve(task_hint='summarize')
+          assert specs[0].provider == 'groq'
+          assert specs[1].provider == 'openrouter'
+          print('Router OK')
+          "
+
+      - name: Dashboard server test
+        run: |
+          python -c "
+          import asyncio
+          from kira.web.server import DashboardServer
+          from kira.memory.sessions import SessionDB
+          from kira.config.loader import load_config, build_kira_home
+          import aiohttp, tempfile, os
+
+          async def test():
+              build_kira_home()
+              config = load_config()
+              db = SessionDB(os.path.join(tempfile.mkdtemp(), 'test.db'))
+              dashboard = DashboardServer(session_db=db, config=config, port=7799)
+              await dashboard.start()
+
+              async with aiohttp.ClientSession() as session:
+                  async with session.get('http://localhost:7799/api/health') as resp:
+                      data = await resp.json()
+                      assert data['status'] == 'running'
+                  async with session.get('http://localhost:7799/') as resp:
+                      html = await resp.text()
+                      assert 'Kira Dashboard' in html
+
+              await dashboard.stop()
+              db.close()
+              print('Dashboard OK')
+
+          asyncio.run(test())
+          "
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install bandit
+
+      - name: Bandit security scan
+        run: bandit -r kira/ -ll --format github -q
+        continue-on-error: true  # advisory, not blocking
